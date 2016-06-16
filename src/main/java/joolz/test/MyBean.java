@@ -9,11 +9,15 @@ import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.repository.model.FileEntry;
 import com.liferay.portal.kernel.util.PropsUtil;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
+import com.liferay.portal.model.Group;
+import com.liferay.portal.service.GroupLocalServiceUtil;
 import com.liferay.portal.service.LayoutServiceUtil;
 import com.liferay.portlet.documentlibrary.service.DLFileEntryLocalServiceUtil;
 
 import java.io.InputStream;
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import javax.faces.bean.ManagedBean;
@@ -33,6 +37,7 @@ public class MyBean implements Serializable {
 	private UploadedFile uploadedFile;
 	private transient Integer maxFileSize = null;
 	private transient Boolean uploadEnabled = null;
+	private transient List<Group> allowedSites = null;
 
 	public UploadedFile getUploadedFile() {
 		return uploadedFile;
@@ -90,11 +95,11 @@ public class MyBean implements Serializable {
 
 	public boolean isUploadEnabled() {
 		if (uploadEnabled == null) {
+			getAllowedSites(); // TODO temporary here
 			LOG.debug("Determine uploadEnabled");
 			uploadEnabled = false;
 			try {
 				LiferayFacesContext lfc = LiferayFacesContext.getInstance();
-				LOG.debug(ProductLocalServiceUtil.getProductsCount());
 				Product product = ProductLocalServiceUtil.getProductByG(lfc.getScopeGroupId());
 				if (product != null) {
 					LOG.debug("Found product " + product.getName());
@@ -112,4 +117,42 @@ public class MyBean implements Serializable {
 		return uploadEnabled;
 	}
 
+	private boolean isSiteDraft(final long groupId) {
+		boolean result = false;
+		try {
+			LiferayFacesContext lfc = LiferayFacesContext.getInstance();
+			LOG.debug("Total number of products " + ProductLocalServiceUtil.getProductsCount());
+			Product product = ProductLocalServiceUtil.getProductByG(groupId);
+			if (product != null) {
+				LOG.debug("Found product " + product.getName() + " for site "
+						+ GroupLocalServiceUtil.getGroup(groupId).getName());
+				int state = product.getState();
+				LOG.debug("has state " + state);
+				if (WorkflowConstants.STATUS_DRAFT == state) {
+					LOG.debug("product is draft, set uploadEnabled to true");
+					result = true;
+				}
+			}
+		} catch (SystemException | PortalException e) {
+			LOG.error(e);
+		}
+		return result;
+	}
+
+	public List<Group> getAllowedSites() {
+		if (allowedSites == null) {
+			allowedSites = new ArrayList<Group>();
+			try {
+				for (Group group : GroupLocalServiceUtil.getGroups(-1, -1)) {
+					if (group.isSite() && isSiteDraft(group.getGroupId())) {
+						LOG.debug("found group " + group.getName());
+					}
+				}
+			} catch (SystemException e) {
+				LOG.error(e);
+			}
+
+		}
+		return allowedSites;
+	}
 }
