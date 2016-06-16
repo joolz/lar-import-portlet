@@ -112,6 +112,17 @@
 			<artifactId>primefaces</artifactId>
 			<version>${primefaces.version}</version>
 		</dependency>
+		<dependency>
+			<groupId>commons-fileupload</groupId>
+			<artifactId>commons-fileupload</artifactId>
+			<version>1.3.2</version>
+		</dependency>
+		<dependency>
+			<groupId>nl.ou.dlwo</groupId>
+			<artifactId>nl-ou-dlwo-products-portlet-service</artifactId>
+			<version>1.6.6</version>
+		</dependency>
+
 	</dependencies>
 	<repositories>
 		<repository>

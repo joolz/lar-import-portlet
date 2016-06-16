@@ -1,17 +1,37 @@
 <?xml version="1.0"?>
 
-<html
-	xmlns="http://www.w3.org/1999/xhtml"
+<html xmlns="http://www.w3.org/1999/xhtml"
 	xmlns:c="http://xmlns.jcp.org/jsp/jstl/core"
 	xmlns:f="http://xmlns.jcp.org/jsf/core"
 	xmlns:h="http://xmlns.jcp.org/jsf/html"
 	xmlns:p="http://primefaces.org/ui"
 	xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
 
-	<h:head />
+<h:head />
 
-	<h:body>
-		<h:outputText value="#{myBean.text}" />
-	</h:body>
+<h:body>
+
+	<ui:fragment rendered="#{!liferay.themeDisplay.signedIn}">
+		<h:outputText value="#{i18n['not-signed-in']}" />
+	</ui:fragment>
+
+	<ui:fragment rendered="#{liferay.themeDisplay.signedIn}">
+
+		<ui:fragment rendered="#{myBean.uploadEnabled}">
+			<h:form enctype="multipart/form-data">
+				<h:messages globalOnly="true" />
+
+				<p:fileUpload id="upload"
+					fileUploadListener="#{myBean.uploadListener}"
+					allowTypes="/(\.|\/)lar$/" multiple="false"
+					sizeLimit="#{myBean.maxFileSize}" invalidSizeMessage="File too big"
+					update="@form" />
+				<p:message for="upload" />
+
+			</h:form>
+		</ui:fragment>
+	</ui:fragment>
+
+</h:body>
 
 </html>
