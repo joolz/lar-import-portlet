@@ -11,25 +11,45 @@
 
 <h:body>
 
-	<ui:fragment rendered="#{!liferay.themeDisplay.signedIn}">
-		<h:outputText value="#{i18n['not-signed-in']}" />
+	<ui:fragment rendered="#{not liferay.themeDisplay.signedIn}">
+		<h:outputText value="#{i18n['you-must-be-authenticated-to-use-this-portlet']}" />
 	</ui:fragment>
 
 	<ui:fragment rendered="#{liferay.themeDisplay.signedIn}">
 
 		<ui:fragment rendered="#{myBean.uploadEnabled}">
-			<h:form enctype="multipart/form-data">
-				<h:messages globalOnly="true" />
 
-				<p:fileUpload id="upload"
-					fileUploadListener="#{myBean.uploadListener}"
-					allowTypes="/(\.|\/)lar$/" multiple="false"
-					sizeLimit="#{myBean.maxFileSize}" invalidSizeMessage="File too big"
-					update="@form" />
-				<p:message for="upload" />
+			<h:form enctype="multipart/form-data">
+
+				<p:messages globalOnly="true" />
+
+				<h:panelGroup id="siteselectpanel" layout="block">
+					<h:outputLabel value="#{i18n['select-site']}" />
+					<p:selectOneRadio id="sitesSelector" value="#{myBean.site}"
+						required="true">
+						<p:ajax update="@form" process="@this" />
+						<f:selectItems value="#{myBean.sites}" var="site"
+							itemLabel="#{site.name}" itemValue="#{site.groupId}" />
+					</p:selectOneRadio>
+				</h:panelGroup>
+
+				<h:panelGroup id="fileselectpanel" layout="block">
+					<h:outputLabel value="#{i18n['upload-file']}" />
+					<p:fileUpload id="upload" required="true"
+						fileUploadListener="#{myBean.uploadListener}"
+						allowTypes="/(\.|\/)lar$/" multiple="false"
+						sizeLimit="#{myBean.maxFileSize}"
+						invalidSizeMessage="File too big" update="@form" process="@this" />
+					<p:message for="upload" />
+				</h:panelGroup>
+
+				<p:commandButton type="input" styleClass="btn blue" update="@form"
+					action="#{myBean.doImport}" value="Import" />
 
 			</h:form>
+
 		</ui:fragment>
+
 	</ui:fragment>
 
 </h:body>
