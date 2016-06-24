@@ -20,6 +20,8 @@ import com.liferay.faces.portal.context.LiferayFacesContext;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.exception.SystemException;
 import com.liferay.portal.kernel.lar.ExportImportHelper;
+import com.liferay.portal.kernel.lar.PortletDataHandlerKeys;
+import com.liferay.portal.kernel.lar.UserIdStrategy;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.repository.model.FileEntry;
@@ -40,6 +42,7 @@ import java.io.OutputStream;
 import java.io.Serializable;
 import java.net.URLConnection;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -236,11 +239,44 @@ public class MyBean implements Serializable {
 				InputStream inputStream = DLFileEntryLocalServiceUtil.getFileAsStream(fileEntry.getFileEntryId(),
 						fileEntry.getVersion(), false);
 
-				// TODO set parameters
-				Map<String, String[]> parameterMap = null;
+				// Import parameters.
+				Map<String, String[]> parameterMap = new HashMap<String, String[]>();
 
-				// TODO BackgroundTaskMessageListener:133] Unable to execute
-				// background task
+				parameterMap.put(PortletDataHandlerKeys.CATEGORIES, new String[] { Boolean.TRUE.toString() });
+
+				// pages
+				parameterMap.put(PortletDataHandlerKeys.DELETE_MISSING_LAYOUTS,
+						new String[] { Boolean.FALSE.toString() });
+				parameterMap.put(PortletDataHandlerKeys.LAYOUT_SET_SETTINGS, new String[] { Boolean.TRUE.toString() });
+				parameterMap.put(PortletDataHandlerKeys.THEME_REFERENCE, new String[] { Boolean.TRUE.toString() });
+				parameterMap.put(PortletDataHandlerKeys.LOGO, new String[] { Boolean.TRUE.toString() });
+
+				// all applications
+				parameterMap.put(PortletDataHandlerKeys.PORTLET_CONFIGURATION_ALL,
+						new String[] { Boolean.TRUE.toString() });
+				parameterMap.put(PortletDataHandlerKeys.PORTLET_SETUP_ALL, new String[] { Boolean.TRUE.toString() });
+				parameterMap.put(PortletDataHandlerKeys.PORTLET_ARCHIVED_SETUPS_ALL,
+						new String[] { Boolean.TRUE.toString() });
+				parameterMap.put(PortletDataHandlerKeys.PORTLET_USER_PREFERENCES_ALL,
+						new String[] { Boolean.TRUE.toString() });
+				parameterMap.put(PortletDataHandlerKeys.PORTLET_CONFIGURATION_ALL,
+						new String[] { Boolean.TRUE.toString() });
+
+				// all content. TODO (?) exclude calendar
+				parameterMap.put(PortletDataHandlerKeys.PORTLET_DATA_ALL, new String[] { Boolean.TRUE.toString() });
+				parameterMap.put(PortletDataHandlerKeys.DELETE_PORTLET_DATA, new String[] { Boolean.FALSE.toString() });
+
+				// permissions
+				parameterMap.put(PortletDataHandlerKeys.PERMISSIONS, new String[] { Boolean.TRUE.toString() });
+
+				// copy as new
+				parameterMap.put(PortletDataHandlerKeys.DATA_STRATEGY,
+						new String[] { PortletDataHandlerKeys.DATA_STRATEGY_COPY_AS_NEW });
+
+				// use the original author
+				parameterMap.put(PortletDataHandlerKeys.USER_ID_STRATEGY,
+						new String[] { UserIdStrategy.CURRENT_USER_ID });
+
 				LayoutServiceUtil.importLayoutsInBackground(fileEntry.getTitle(), groupId, false, parameterMap,
 						inputStream);
 
