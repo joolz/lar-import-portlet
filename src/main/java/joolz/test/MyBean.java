@@ -29,8 +29,12 @@ import com.liferay.portal.kernel.util.PropsUtil;
 import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import com.liferay.portal.model.Group;
+import com.liferay.portal.model.LayoutSet;
+import com.liferay.portal.model.LayoutSetPrototype;
 import com.liferay.portal.service.GroupLocalServiceUtil;
 import com.liferay.portal.service.LayoutServiceUtil;
+import com.liferay.portal.service.LayoutSetLocalServiceUtil;
+import com.liferay.portal.service.LayoutSetPrototypeLocalServiceUtil;
 import com.liferay.portlet.documentlibrary.service.DLFileEntryLocalServiceUtil;
 
 import java.io.File;
@@ -161,11 +165,8 @@ public class MyBean implements Serializable {
 		try {
 			Product product = ProductLocalServiceUtil.getProductByG(groupId);
 			if (product != null) {
-				LOG.debug("Found product " + product.getName());
 				int state = product.getState();
 				if (WorkflowConstants.STATUS_DRAFT == state) {
-					LOG.debug("Site " + product.getGroupId() + " has product " + product.getProductId()
-							+ " that is draft");
 					result = true;
 				}
 			}
@@ -296,4 +297,49 @@ public class MyBean implements Serializable {
 		}
 		return StringPool.BLANK;
 	}
+
+	/**
+	 * Test code, check if which template a site has. 
+	 */
+	
+	@SuppressWarnings("unused")
+	private void getLayoutSetPrototype() {
+		LiferayFacesContext lfc = LiferayFacesContext.getInstance();
+
+		List<Group> groups = null;
+		try {
+			groups = GroupLocalServiceUtil.getGroups(-1, -1);
+		} catch (SystemException e) {
+			LOG.error(e);
+		}
+
+		for (Group group : groups) {
+			if (group.getClassNameId() == 10001) {
+				LOG.debug("Check site " + group.getGroupId() + " " + group.getName());
+				LayoutSet publicLayoutSet = null;
+				try {
+					publicLayoutSet = LayoutSetLocalServiceUtil.getLayoutSet(group.getGroupId(), false);
+				} catch (PortalException | SystemException e) {
+					// NOOP
+				}
+
+				if (publicLayoutSet != null) {
+					LayoutSetPrototype layoutSetPrototypePublic = null;
+					try {
+						layoutSetPrototypePublic = LayoutSetPrototypeLocalServiceUtil
+								.getLayoutSetPrototypeByUuidAndCompanyId(publicLayoutSet.getLayoutSetPrototypeUuid(),
+										lfc.getCompanyId());
+					} catch (PortalException | SystemException e) {
+						// NOOP
+					}
+
+					if (layoutSetPrototypePublic != null) {
+						LOG.debug("Site " + group.getName() + " has public template "
+								+ layoutSetPrototypePublic.getName());
+					}
+				}
+			}
+		}
+	}
+	
 }
