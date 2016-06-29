@@ -43,9 +43,9 @@
 					<p:message for="upload" />
 				</h:panelGroup>
 
-				<p:commandButton type="input" styleClass="btn blue" update="@form"
+				<p:commandButton styleClass="btn blue" process="@this"
 					action="#{myBean.doImport}" value="Import" />
-
+					
 			</h:form>
 
 		</ui:fragment>

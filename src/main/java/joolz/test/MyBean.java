@@ -26,9 +26,9 @@ import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.repository.model.FileEntry;
 import com.liferay.portal.kernel.util.PropsUtil;
-import com.liferay.portal.kernel.util.StringPool;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import com.liferay.portal.model.Group;
+import com.liferay.portal.model.GroupConstants;
 import com.liferay.portal.model.LayoutSet;
 import com.liferay.portal.model.LayoutSetPrototype;
 import com.liferay.portal.service.GroupLocalServiceUtil;
@@ -36,6 +36,7 @@ import com.liferay.portal.service.LayoutServiceUtil;
 import com.liferay.portal.service.LayoutSetLocalServiceUtil;
 import com.liferay.portal.service.LayoutSetPrototypeLocalServiceUtil;
 import com.liferay.portlet.documentlibrary.service.DLFileEntryLocalServiceUtil;
+import com.liferay.portlet.sites.util.SitesUtil;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -46,6 +47,7 @@ import java.io.OutputStream;
 import java.io.Serializable;
 import java.net.URLConnection;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -218,7 +220,64 @@ public class MyBean implements Serializable {
 	 *
 	 * @return the string
 	 */
-	public String doImport() {
+	public void doImport() {
+		LOG.debug("doImport called");
+
+		if ("not".equals("now")) {
+			doImportToCurrentSite();
+		}
+
+		doCreateSite();
+	}
+
+	/**
+	 * Test code, check if which template a site has.
+	 */
+
+	@SuppressWarnings("unused")
+	private void getLayoutSetPrototype() {
+		LiferayFacesContext lfc = LiferayFacesContext.getInstance();
+
+		List<Group> groups = null;
+		try {
+			groups = GroupLocalServiceUtil.getGroups(-1, -1);
+		} catch (SystemException e) {
+			LOG.error(e);
+		}
+
+		for (Group group : groups) {
+			if (group.getClassNameId() == 10001) {
+				LOG.debug("Check site " + group.getGroupId() + " " + group.getName());
+				LayoutSet publicLayoutSet = null;
+				try {
+					publicLayoutSet = LayoutSetLocalServiceUtil.getLayoutSet(group.getGroupId(), false);
+				} catch (PortalException | SystemException e) {
+					// NOOP
+				}
+
+				if (publicLayoutSet != null) {
+					LayoutSetPrototype layoutSetPrototypePublic = null;
+					try {
+						layoutSetPrototypePublic = LayoutSetPrototypeLocalServiceUtil
+								.getLayoutSetPrototypeByUuidAndCompanyId(publicLayoutSet.getLayoutSetPrototypeUuid(),
+										lfc.getCompanyId());
+					} catch (PortalException | SystemException e) {
+						// NOOP
+					}
+
+					if (layoutSetPrototypePublic != null) {
+						LOG.debug("Site " + group.getName() + " has public template "
+								+ layoutSetPrototypePublic.getName());
+					}
+				}
+			}
+		}
+	}
+
+	/**
+	 * Test code. Import lar to current site.
+	 */
+	private void doImportToCurrentSite() {
 		LiferayFacesContext lfc = LiferayFacesContext.getInstance();
 		if (getSite() == null || getSite().trim().isEmpty()) {
 			LOG.debug("No site selected");
@@ -295,51 +354,37 @@ public class MyBean implements Serializable {
 				}
 			}
 		}
-		return StringPool.BLANK;
 	}
 
 	/**
-	 * Test code, check if which template a site has. 
+	 * Test code. Create site based on a template
 	 */
-	
-	@SuppressWarnings("unused")
-	private void getLayoutSetPrototype() {
+	private void doCreateSite() {
 		LiferayFacesContext lfc = LiferayFacesContext.getInstance();
+		final long TEMPLATE_ID = 136315;
 
-		List<Group> groups = null;
+		LOG.debug("Create site");
+
 		try {
-			groups = GroupLocalServiceUtil.getGroups(-1, -1);
-		} catch (SystemException e) {
+			LayoutSetPrototype template = LayoutSetPrototypeLocalServiceUtil.getLayoutSetPrototype(TEMPLATE_ID);
+			LOG.debug("Will use template " + template.getName());
+
+			Group site = GroupLocalServiceUtil.addGroup(lfc.getUserId(), GroupConstants.DEFAULT_PARENT_GROUP_ID,
+					Group.class.getName(), 0L, GroupConstants.DEFAULT_LIVE_GROUP_ID, "Generated group " + new Date(),
+					"Generated test group", GroupConstants.TYPE_SITE_PRIVATE, false, 0, null, true, true, null);
+			LOG.debug("Created site " + site.getGroupId());
+
+			LayoutSet privateLayoutSet = site.getPrivateLayoutSet();
+			LayoutSet publicLayoutSet = site.getPublicLayoutSet();
+			LOG.debug("Site has privateLayoutSet " + privateLayoutSet);
+			LOG.debug("Site has publicLayoutSet " + publicLayoutSet);
+
+			// now bind the site to the template site.
+			SitesUtil.updateLayoutSetPrototypesLinks(site, TEMPLATE_ID, TEMPLATE_ID, true, true);
+			LOG.debug("Prototypelinks updated");
+
+		} catch (Exception e) {
 			LOG.error(e);
 		}
-
-		for (Group group : groups) {
-			if (group.getClassNameId() == 10001) {
-				LOG.debug("Check site " + group.getGroupId() + " " + group.getName());
-				LayoutSet publicLayoutSet = null;
-				try {
-					publicLayoutSet = LayoutSetLocalServiceUtil.getLayoutSet(group.getGroupId(), false);
-				} catch (PortalException | SystemException e) {
-					// NOOP
-				}
-
-				if (publicLayoutSet != null) {
-					LayoutSetPrototype layoutSetPrototypePublic = null;
-					try {
-						layoutSetPrototypePublic = LayoutSetPrototypeLocalServiceUtil
-								.getLayoutSetPrototypeByUuidAndCompanyId(publicLayoutSet.getLayoutSetPrototypeUuid(),
-										lfc.getCompanyId());
-					} catch (PortalException | SystemException e) {
-						// NOOP
-					}
-
-					if (layoutSetPrototypePublic != null) {
-						LOG.debug("Site " + group.getName() + " has public template "
-								+ layoutSetPrototypePublic.getName());
-					}
-				}
-			}
-		}
 	}
-	
 }
